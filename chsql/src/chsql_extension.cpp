@@ -119,10 +119,32 @@ static DefaultMacro chsql_macros[] = {
     // IP Address Functions
     {DEFAULT_SCHEMA, "IPv4NumToString", {"num", nullptr}, {{nullptr, nullptr}}, R"(CONCAT(CAST((num >> 24) & 255 AS VARCHAR), '.', CAST((num >> 16) & 255 AS VARCHAR), '.', CAST((num >> 8) & 255 AS VARCHAR), '.', CAST(num & 255 AS VARCHAR)))"},
     {DEFAULT_SCHEMA, "IPv4StringToNum", {"ip", nullptr}, {{nullptr, nullptr}}, R"(CAST(SPLIT_PART(ip, '.', 1) AS INTEGER) * 256 * 256 * 256 + CAST(SPLIT_PART(ip, '.', 2) AS INTEGER) * 256 * 256 + CAST(SPLIT_PART(ip, '.', 3) AS INTEGER) * 256 + CAST(SPLIT_PART(ip, '.', 4) AS INTEGER))"},
+    // -- JSON Macros
+    {DEFAULT_SCHEMA, "JSONExtract", {"json", "key", nullptr}, {{nullptr, nullptr}}, R"(json_extract(json, key))"},
+    {DEFAULT_SCHEMA, "JSONExtractString", {"json", "key", nullptr}, {{nullptr, nullptr}}, R"(CAST(json_extract(json, key) AS VARCHAR))"},
+    {DEFAULT_SCHEMA, "JSONExtractUInt", {"json", "key", nullptr}, {{nullptr, nullptr}}, R"(CAST(json_extract(json, key) AS UINTEGER))"},
+    {DEFAULT_SCHEMA, "JSONExtractInt", {"json", "key", nullptr}, {{nullptr, nullptr}}, R"(CAST(json_extract(json, key) AS INT32))"},
+    {DEFAULT_SCHEMA, "JSONExtractFloat", {"json", "key", nullptr}, {{nullptr, nullptr}}, R"(CAST(json_extract(json, key) AS DOUBLE))"},
+    {DEFAULT_SCHEMA, "JSONExtractRaw", {"json", "key", nullptr}, {{nullptr, nullptr}}, R"(json_extract(json, key))"},
+    {DEFAULT_SCHEMA, "JSONHas", {"json", "key", nullptr}, {{nullptr, nullptr}}, R"(json_extract(json, key) IS NOT NULL)"},
+    {DEFAULT_SCHEMA, "JSONLength", {"json", nullptr}, {{nullptr, nullptr}}, R"(json_array_length(json))"},
+    {DEFAULT_SCHEMA, "JSONType", {"json", "path", nullptr}, {{nullptr, nullptr}}, R"(CASE  WHEN path IS NULL THEN json_each(json) ELSE json_each(json,path) END)"},
+    {DEFAULT_SCHEMA, "JSONExtractKeys", {"json", nullptr}, {{nullptr, nullptr}}, R"(json_object_keys(json))"},
+    {DEFAULT_SCHEMA, "JSONExtractValues", {"json", nullptr}, {{nullptr, nullptr}}, R"(json_each_text(json))"},
+    // -- Compare Macros
+    {DEFAULT_SCHEMA, "equals", {"a", "b", nullptr}, {{nullptr, nullptr}}, R"((a = b))"},
+    {DEFAULT_SCHEMA, "notEquals", {"a", "b", nullptr}, {{nullptr, nullptr}}, R"((a <> b))"},
+    {DEFAULT_SCHEMA, "less", {"a", "b", nullptr}, {{nullptr, nullptr}}, R"((a < b))"},
+    {DEFAULT_SCHEMA, "greater", {"a", "b", nullptr}, {{nullptr, nullptr}}, R"((a > b))"},
+    {DEFAULT_SCHEMA, "lessOrEquals", {"a", "b", nullptr}, {{nullptr, nullptr}}, R"((a <= b))"},
+    {DEFAULT_SCHEMA, "greaterOrEquals", {"a", "b", nullptr}, {{nullptr, nullptr}}, R"((a >= b))"},
     // -- Misc macros
     {DEFAULT_SCHEMA, "generateUUIDv4", {nullptr}, {{nullptr, nullptr}}, R"(toString(uuid()))"},
     {DEFAULT_SCHEMA, "parseURL", {"url", "part", nullptr}, {{nullptr, nullptr}}, R"(CASE part WHEN 'protocol' THEN REGEXP_EXTRACT(url, '^(\w+)://') WHEN 'domain' THEN REGEXP_EXTRACT(url, '://([^/:]+)') WHEN 'port' THEN REGEXP_EXTRACT(url, ':(\d+)') WHEN 'path' THEN REGEXP_EXTRACT(url, '://[^/]+(/.+?)(\?|#|$)') WHEN 'query' THEN REGEXP_EXTRACT(url, '\?([^#]+)') WHEN 'fragment' THEN REGEXP_EXTRACT(url, '#(.+)$') END)"},
     {DEFAULT_SCHEMA, "bitCount", {"num", nullptr}, {{nullptr, nullptr}}, R"(BIT_COUNT(num))"},
+    // Dictionary Emulation using MAP VARIABLES
+    {DEFAULT_SCHEMA, "dictGet", {"dict","attr", nullptr}, {{nullptr, nullptr}}, R"(getvariable(dict)[attr][1])"},
+    // -- End Macro
     {nullptr, nullptr, {nullptr}, {{nullptr, nullptr}}, nullptr}};
 
 // To add a new table SQL macro, add a new macro to this array!
