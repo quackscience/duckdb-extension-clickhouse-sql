@@ -127,6 +127,13 @@ static DefaultMacro chsql_macros[] = {
     {DEFAULT_SCHEMA, "JSONType", {"json"}, {{nullptr, nullptr}}, R"(json_each(json))"},
     {DEFAULT_SCHEMA, "JSONExtractKeys", {"json"}, {{nullptr, nullptr}}, R"(json_object_keys(json))"},
     {DEFAULT_SCHEMA, "JSONExtractValues", {"json"}, {{nullptr, nullptr}}, R"(json_each_text(json))"},
+    // -- Compare Macros
+    {DEFAULT_SCHEMA, "equals", {"a", "b"}, {{nullptr, nullptr}}, R"((a = b))"},
+    {DEFAULT_SCHEMA, "notEquals", {"a", "b"}, {{nullptr, nullptr}}, R"((a <> b))"},
+    {DEFAULT_SCHEMA, "less", {"a", "b"}, {{nullptr, nullptr}}, R"((a < b))"},
+    {DEFAULT_SCHEMA, "greater", {"a", "b"}, {{nullptr, nullptr}}, R"((a > b))"},
+    {DEFAULT_SCHEMA, "lessOrEquals", {"a", "b"}, {{nullptr, nullptr}}, R"((a <= b))"},
+    {DEFAULT_SCHEMA, "greaterOrEquals", {"a", "b"}, {{nullptr, nullptr}}, R"((a >= b))"},
     // -- Misc macros
     {DEFAULT_SCHEMA, "generateUUIDv4", {nullptr}, {{nullptr, nullptr}}, R"(toString(uuid()))"},
     {DEFAULT_SCHEMA, "parseURL", {"url", "part", nullptr}, {{nullptr, nullptr}}, R"(CASE part WHEN 'protocol' THEN REGEXP_EXTRACT(url, '^(\w+)://') WHEN 'domain' THEN REGEXP_EXTRACT(url, '://([^/:]+)') WHEN 'port' THEN REGEXP_EXTRACT(url, ':(\d+)') WHEN 'path' THEN REGEXP_EXTRACT(url, '://[^/]+(/.+?)(\?|#|$)') WHEN 'query' THEN REGEXP_EXTRACT(url, '\?([^#]+)') WHEN 'fragment' THEN REGEXP_EXTRACT(url, '#(.+)$') END)"},
