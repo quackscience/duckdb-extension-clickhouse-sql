@@ -120,11 +120,15 @@ static DefaultMacro chsql_macros[] = {
     {DEFAULT_SCHEMA, "IPv4NumToString", {"num", nullptr}, {{nullptr, nullptr}}, R"(CONCAT(CAST((num >> 24) & 255 AS VARCHAR), '.', CAST((num >> 16) & 255 AS VARCHAR), '.', CAST((num >> 8) & 255 AS VARCHAR), '.', CAST(num & 255 AS VARCHAR)))"},
     {DEFAULT_SCHEMA, "IPv4StringToNum", {"ip", nullptr}, {{nullptr, nullptr}}, R"(CAST(SPLIT_PART(ip, '.', 1) AS INTEGER) * 256 * 256 * 256 + CAST(SPLIT_PART(ip, '.', 2) AS INTEGER) * 256 * 256 + CAST(SPLIT_PART(ip, '.', 3) AS INTEGER) * 256 + CAST(SPLIT_PART(ip, '.', 4) AS INTEGER))"},
     // -- JSON Macros
-    {DEFAULT_SCHEMA, "JSONExtract", {"json", "key", "type", nullptr}, {{nullptr, nullptr}}, R"(CAST(json_extract(json, key) AS type))"},
+    {DEFAULT_SCHEMA, "JSONExtract", {"json", "key", nullptr}, {{nullptr, nullptr}}, R"(json_extract(json, key))"},
+    {DEFAULT_SCHEMA, "JSONExtractString", {"json", "key", nullptr}, {{nullptr, nullptr}}, R"(CAST(json_extract(json, key) AS VARCHAR))"},
+    {DEFAULT_SCHEMA, "JSONExtractUInt", {"json", "key", nullptr}, {{nullptr, nullptr}}, R"(CAST(json_extract(json, key) AS UINTEGER))"},
+    {DEFAULT_SCHEMA, "JSONExtractInt", {"json", "key", nullptr}, {{nullptr, nullptr}}, R"(CAST(json_extract(json, key) AS INT32))"},
+    {DEFAULT_SCHEMA, "JSONExtractFloat", {"json", "key", nullptr}, {{nullptr, nullptr}}, R"(CAST(json_extract(json, key) AS DOUBLE))"},
     {DEFAULT_SCHEMA, "JSONExtractRaw", {"json", "key", nullptr}, {{nullptr, nullptr}}, R"(json_extract(json, key))"},
     {DEFAULT_SCHEMA, "JSONHas", {"json", "key", nullptr}, {{nullptr, nullptr}}, R"(json_extract(json, key) IS NOT NULL)"},
     {DEFAULT_SCHEMA, "JSONLength", {"json", nullptr}, {{nullptr, nullptr}}, R"(json_array_length(json))"},
-    {DEFAULT_SCHEMA, "JSONType", {"json", nullptr}, {{nullptr, nullptr}}, R"(json_each(json))"},
+    {DEFAULT_SCHEMA, "JSONType", {"json", "path", nullptr}, {{nullptr, nullptr}}, R"(CASE  WHEN path IS NULL THEN json_each(json) ELSE json_each(json,path) END)"},
     {DEFAULT_SCHEMA, "JSONExtractKeys", {"json", nullptr}, {{nullptr, nullptr}}, R"(json_object_keys(json))"},
     {DEFAULT_SCHEMA, "JSONExtractValues", {"json", nullptr}, {{nullptr, nullptr}}, R"(json_each_text(json))"},
     // -- Compare Macros
