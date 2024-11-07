@@ -142,9 +142,9 @@ static DefaultMacro chsql_macros[] = {
     {DEFAULT_SCHEMA, "generateUUIDv4", {nullptr}, {{nullptr, nullptr}}, R"(toString(uuid()))"},
     {DEFAULT_SCHEMA, "parseURL", {"url", "part", nullptr}, {{nullptr, nullptr}}, R"(CASE part WHEN 'protocol' THEN REGEXP_EXTRACT(url, '^(\w+)://') WHEN 'domain' THEN REGEXP_EXTRACT(url, '://([^/:]+)') WHEN 'port' THEN REGEXP_EXTRACT(url, ':(\d+)') WHEN 'path' THEN REGEXP_EXTRACT(url, '://[^/]+(/.+?)(\?|#|$)') WHEN 'query' THEN REGEXP_EXTRACT(url, '\?([^#]+)') WHEN 'fragment' THEN REGEXP_EXTRACT(url, '#(.+)$') END)"},
     {DEFAULT_SCHEMA, "bitCount", {"num", nullptr}, {{nullptr, nullptr}}, R"(BIT_COUNT(num))"},
-    // Dictionary Emulation
+    // Dictionary Emulation using MAP VARIABLES
     {DEFAULT_SCHEMA, "dictGet", {"dict","attr", nullptr}, {{nullptr, nullptr}}, R"(getvariable(dict)[attr][1])"},
-    // END
+    // -- End Macro
     {nullptr, nullptr, {nullptr}, {{nullptr, nullptr}}, nullptr}};
 
 // To add a new table SQL macro, add a new macro to this array!
