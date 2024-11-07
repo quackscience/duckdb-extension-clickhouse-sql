@@ -12,4 +12,7 @@ public:
 };
 duckdb::TableFunction ReadParquetOrderedFunction();
 static void RegisterSillyBTreeStore(DatabaseInstance &instance);
+
+TableFunction DuckFlockTableFunction();
+
 } // namespace duckdb

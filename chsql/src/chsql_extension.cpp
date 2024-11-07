@@ -216,7 +216,7 @@ static void LoadInternal(DatabaseInstance &instance) {
     ExtensionUtil::RegisterFunction(instance, chsql_openssl_version_scalar_function);
 
     // Macros
-	for (idx_t index = 0; chsql_macros[index].name != nullptr; index++) {
+    for (idx_t index = 0; chsql_macros[index].name != nullptr; index++) {
 		auto info = DefaultFunctionGenerator::CreateInternalMacroInfo(chsql_macros[index]);
 		ExtensionUtil::RegisterFunction(instance, *info);
 	}
@@ -226,6 +226,8 @@ static void LoadInternal(DatabaseInstance &instance) {
         ExtensionUtil::RegisterFunction(instance, *table_info);
 	}
 	ExtensionUtil::RegisterFunction(instance, ReadParquetOrderedFunction());
+    // Flock
+    ExtensionUtil::RegisterFunction(instance, DuckFlockTableFunction());
 }
 
 void ChsqlExtension::Load(DuckDB &db) {
