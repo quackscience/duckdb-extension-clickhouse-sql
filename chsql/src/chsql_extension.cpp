@@ -88,7 +88,7 @@ static DefaultMacro chsql_macros[] = {
     {DEFAULT_SCHEMA, "match", {"string", "token"}, {{nullptr, nullptr}}, R"(string LIKE token)"},
     // -- Array macros
     {DEFAULT_SCHEMA, "arrayExists", {"needle", "haystack", nullptr}, {{nullptr, nullptr}}, R"(haystack @> ARRAY[needle])"},
-    {DEFAULT_SCHEMA, "arrayMap", {"e", "arr", nullptr}, {{nullptr, nullptr}}, R"(array_transform(arr, e -> (e * e)))"},
+    {DEFAULT_SCHEMA, "arrayMap", {"x", "arr", nullptr}, {{nullptr, nullptr}}, R"(array_transform(arr, x))"},
     // Date and Time Functions
     {DEFAULT_SCHEMA, "toYear", {"date_expression", nullptr}, {{nullptr, nullptr}}, R"(EXTRACT(YEAR FROM date_expression))"},
     {DEFAULT_SCHEMA, "toMonth", {"date_expression", nullptr}, {{nullptr, nullptr}}, R"(EXTRACT(MONTH FROM date_expression))"},
