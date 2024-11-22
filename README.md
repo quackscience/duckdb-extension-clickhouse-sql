@@ -79,85 +79,115 @@ D SELECT * FROM ch_scan("SELECT number * 2 FROM numbers(10)", "https://play.clic
 <br>
 
 
-## Development
-The extension is automatically build and distributed. This section is only required for development.
-
-### Managing dependencies
-DuckDB extensions uses VCPKG for dependency management. Enabling VCPKG is very simple: follow the [installation instructions](https://vcpkg.io/en/getting-started) or just run the following:
-```shell
-git clone https://github.com/Microsoft/vcpkg.git
-./vcpkg/bootstrap-vcpkg.sh
-export VCPKG_TOOLCHAIN_PATH=`pwd`/vcpkg/scripts/buildsystems/vcpkg.cmake
-```
-Note: VCPKG is only required for extensions that want to rely on it for dependency management. If you want to develop an extension without dependencies, or want to do your own dependency management, just skip this step. Note that the example extension uses VCPKG to build with a dependency for instructive purposes, so when skipping this step the build may not work without removing the dependency.
-
-### Build steps
-Clone the repository and fetch all required submodules:
-```sh
-git submodule update --init
-```
-
-Build the extension:
-```sh
-GEN=ninja make
-```
-The main binaries that will be built are:
-```sh
-./build/release/duckdb
-./build/release/test/unittest
-./build/release/extension/dynamic_sql_clickhouse/dynamic_sql_clickhouse.duckdb_extension
-```
-- `duckdb` is the binary for the duckdb shell with the extension code automatically loaded.
-- `unittest` is the test runner of duckdb. Again, the extension is already linked into the binary.
-- `dynamic_sql_clickhouse.duckdb_extension` is the loadable binary as it would be distributed.
-
-## Running the extension
-To run the extension code, simply start the shell with `./build/release/duckdb`.
-
-Now we can use the features from the extension directly in DuckDB. See `/tests/sql` for a list of supported functions.
-
-## Running the tests
-Different tests can be created for DuckDB extensions. The primary way of testing DuckDB extensions should be the SQL tests in `./test/sql`. These SQL tests can be run using:
-```sh
-make test
-```
-
-<!--
-### Installing the deployed binaries
-To install your extension binaries from S3, you will need to do two things. Firstly, DuckDB should be launched with the
-`allow_unsigned_extensions` option set to true. How to set this will depend on the client you're using. Some examples:
-
-CLI:
-```shell
-duckdb -unsigned
-```
-
-Python:
-```python
-con = duckdb.connect(':memory:', config={'allow_unsigned_extensions' : 'true'})
-```
-
-NodeJS:
-```js
-db = new duckdb.Database(':memory:', {"allow_unsigned_extensions": "true"});
-```
-
-Secondly, you will need to set the repository endpoint in DuckDB to the HTTP url of your bucket + version of the extension
-you want to install. To do this run the following SQL query in DuckDB:
-```sql
-SET custom_extension_repository='bucket.s3.eu-west-1.amazonaws.com/<your_extension_name>/latest';
-```
-Note that the `/latest` path will allow you to install the latest extension version available for your current version of
-DuckDB. To specify a specific version, you can pass the version instead.
-
-After running these steps, you can install and load your extension using the regular INSTALL/LOAD commands in DuckDB:
-```sql
-INSTALL dynamic_sql_clickhouse
-LOAD dynamic_sql_clickhouse
-```
-
--->
-
+## Functions
+| function               | fun_type    | description                                                                                  | comment                                       | example                                                                                              |
+| ---------------------- | ----------- | -------------------------------------------------------------------------------------------- | --------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| IPv4NumToString        | macro       | Cast IPv4 address from numeric to string format                                              |                                               | SELECT IPv4NumToString(2130706433);                                                                  |
+| IPv4StringToNum        | macro       | Cast IPv4 address from string to numeric format                                              |                                               | SELECT IPv4StringToNum('127.0.0.1');                                                                 |
+| arrayExists            | macro       | Check if any element of the array satisfies the condition                                    |                                               | SELECT arrayExists(x -> x = 1, [1, 2, 3]);                                                           |
+| arrayJoin              | macro       | Unroll an array into multiple rows                                                           |                                               | SELECT arrayJoin([1, 2, 3]);                                                                         |
+| arrayMap               | macro       | Applies a function to each element of an array                                               |                                               | SELECT arrayMap(x -> x + 1, [1, 2, 3]);                                                              |
+| bitCount               | macro       | Counts the number of set bits in an integer                                                  |                                               | SELECT bitCount(15);                                                                                 |
+| ch_scan                | table_macro | Query a remote ClickHouse server using HTTP/s API                                            | Returns the query results                     | SELECT * FROM ch_scan('SELECT version()','https://play.clickhouse.com', format := 'parquet');        |
+| domain                 | macro       | Extracts the domain from a URL                                                               |                                               | SELECT domain('https://clickhouse.com/docs');                                                        |
+| empty                  | macro       | Check if a string is empty                                                                   |                                               | SELECT empty('');                                                                                    |
+| extractAllGroups       | macro       | Extracts all matching groups from a string using a regular expression                        |                                               | SELECT extractAllGroups('(\\d+)', 'abc123');                                                         |
+| formatDateTime         | macro       | Formats a DateTime value into a string                                                       |                                               | SELECT formatDateTime(now(), '%Y-%m-%d');                                                            |
+| generateUUIDv4         | macro       | Generate a UUID v4 value                                                                     |                                               | SELECT generateUUIDv4();                                                                             |
+| ifNull                 | macro       | Returns the first argument if not NULL, otherwise the second                                 |                                               | SELECT ifNull(NULL, 'default');                                                                      |
+| intDiv                 | macro       | Performs integer division                                                                    |                                               | SELECT intDiv(10, 3);                                                                                |
+| intDivOZero            | macro       | Performs integer division but returns zero instead of throwing an error for division by zero |                                               | SELECT intDivOZero(10, 0);                                                                           |
+| intDivOrNull           | macro       | Performs integer division but returns NULL instead of throwing an error for division by zero |                                               | SELECT intDivOrNull(10, 0);                                                                          |
+| leftPad                | macro       | Pads a string on the left to a specified length                                              |                                               | SELECT leftPad('abc', 5, '*');                                                                       |
+| lengthUTF8             | macro       | Returns the length of a string in UTF-8 characters                                           |                                               | SELECT lengthUTF8('Привет');                                                                         |
+| match                  | macro       | Performs a regular expression match on a string                                              |                                               | SELECT match('abc123', '\\d+');                                                                      |
+| minus                  | macro       | Performs subtraction of two numbers                                                          |                                               | SELECT minus(5, 3);                                                                                  |
+| modulo                 | macro       | Calculates the remainder of division (modulus)                                               |                                               | SELECT modulo(10, 3);                                                                                |
+| moduloOrZero           | macro       | Calculates modulus but returns zero instead of error on division by zero                     |                                               | SELECT moduloOrZero(10, 0);                                                                          |
+| notEmpty               | macro       | Check if a string is not empty                                                               |                                               | SELECT notEmpty('abc');                                                                              |
+| numbers                | table_macro | Generates a sequence of numbers starting from 0                                              | Returns a table with a single column (UInt64) | SELECT * FROM numbers(10);                                                                           |
+| parseURL               | macro       | Extracts parts of a URL                                                                      |                                               | SELECT parseURL('https://clickhouse.com', 'host');                                                   |
+| path                   | macro       | Extracts the path from a URL                                                                 |                                               | SELECT path('https://clickhouse.com/docs');                                                          |
+| plus                   | macro       | Performs addition of two numbers                                                             |                                               | SELECT plus(5, 3);                                                                                   |
+| protocol               | macro       | Extracts the protocol from a URL                                                             |                                               | SELECT protocol('https://clickhouse.com');                                                           |
+| read_parquet_mergetree | function    | Merge parquet files using a primary sorting key for fast range queries                       | experimental                                  | COPY (SELECT * FROM read_parquet_mergetree(['/folder/*.parquet'], 'sortkey') TO 'sorted.parquet';    |
+| rightPad               | macro       | Pads a string on the right to a specified length                                             |                                               | SELECT rightPad('abc', 5, '*');                                                                      |
+| splitByChar            | macro       | Splits a string by a given character                                                         |                                               | SELECT splitByChar(',', 'a,b,c');                                                                    |
+| toDayOfMonth           | macro       | Extracts the day of the month from a date                                                    |                                               | SELECT toDayOfMonth('2023-09-10');                                                                   |
+| toFixedString          | macro       | Converts a value to a fixed-length string                                                    |                                               | SELECT toFixedString('abc', 5);                                                                      |
+| toFloat                | macro       | Converts a value to a float                                                                  |                                               | SELECT toFloat('123.45');                                                                            |
+| toFloatOrNull          | macro       | Converts a value to float or returns NULL if the conversion fails                            |                                               | SELECT toFloatOrNull('abc');                                                                         |
+| toFloatOrZero          | macro       | Converts a value to float or returns zero if the conversion fails                            |                                               | SELECT toFloatOrZero('abc');                                                                         |
+| toHour                 | macro       | Extracts the hour from a DateTime value                                                      |                                               | SELECT toHour(now());                                                                                |
+| toInt128               | macro       | Converts a value to a 128-bit integer                                                        |                                               | SELECT toInt128('123456789012345678901234567890');                                                   |
+| toInt128OrNull         | macro       | Converts to a 128-bit integer or returns NULL on failure                                     |                                               | SELECT toInt128OrNull('abc');                                                                        |
+| toInt128OrZero         | macro       | Converts to a 128-bit integer or returns zero on failure                                     |                                               | SELECT toInt128OrZero('abc');                                                                        |
+| toInt16                | macro       | Converts a value to a 16-bit integer                                                         |                                               | SELECT toInt16('123');                                                                               |
+| toInt16OrNull          | macro       | Converts to a 16-bit integer or returns NULL on failure                                      |                                               | SELECT toInt16OrNull('abc');                                                                         |
+| toInt16OrZero          | macro       | Converts to a 16-bit integer or returns zero on failure                                      |                                               | SELECT toInt16OrZero('abc');                                                                         |
+| toInt256               | macro       | Converts a value to a 256-bit integer                                                        |                                               | SELECT toInt256('12345678901234567890123456789012345678901234567890123456789012345678901234567890'); |
+| toInt256OrNull         | macro       | Converts to a 256-bit integer or returns NULL on failure                                     |                                               | SELECT toInt256OrNull('abc');                                                                        |
+| toInt256OrZero         | macro       | Converts to a 256-bit integer or returns zero on failure                                     |                                               | SELECT toInt256OrZero('abc');                                                                        |
+| toInt32                | macro       | Converts a value to a 32-bit integer                                                         |                                               | SELECT toInt32('123');                                                                               |
+| toInt32OrNull          | macro       | Converts to a 32-bit integer or returns NULL on failure                                      |                                               | SELECT toInt32OrNull('abc');                                                                         |
+| toInt32OrZero          | macro       | Converts to a 32-bit integer or returns zero on failure                                      |                                               | SELECT toInt32OrZero('abc');                                                                         |
+| toInt64                | macro       | Converts a value to a 64-bit integer                                                         |                                               | SELECT toInt64('123');                                                                               |
+| toInt64OrNull          | macro       | Converts to a 64-bit integer or returns NULL on failure                                      |                                               | SELECT toInt64OrNull('abc');                                                                         |
+| toInt64OrZero          | macro       | Converts to a 64-bit integer or returns zero on failure                                      |                                               | SELECT toInt64OrZero('abc');                                                                         |
+| toInt8                 | macro       | Converts a value to an 8-bit integer                                                         |                                               | SELECT toInt8('123');                                                                                |
+| toInt8OrNull           | macro       | Converts to an 8-bit integer or returns NULL on failure                                      |                                               | SELECT toInt8OrNull('abc');                                                                          |
+| toInt8OrZero           | macro       | Converts to an 8-bit integer or returns zero on failure                                      |                                               | SELECT toInt8OrZero('abc');                                                                          |
+| toMinute               | macro       | Extracts the minute from a DateTime value                                                    |                                               | SELECT toMinute(now());                                                                              |
+| toMonth                | macro       | Extracts the month from a Date value                                                         |                                               | SELECT toMonth('2023-09-10');                                                                        |
+| toSecond               | macro       | Extracts the second from a DateTime value                                                    |                                               | SELECT toSecond(now());                                                                              |
+| toString               | macro       | Converts a value to a string                                                                 |                                               | SELECT toString(123);                                                                                |
+| toUInt16               | macro       | Converts a value to an unsigned 16-bit integer                                               |                                               | SELECT toUInt16('123');                                                                              |
+| toUInt16OrNull         | macro       | Converts to an unsigned 16-bit integer or returns NULL on failure                            |                                               | SELECT toUInt16OrNull('abc');                                                                        |
+| toUInt16OrZero         | macro       | Converts to an unsigned 16-bit integer or returns zero on failure                            |                                               | SELECT toUInt16OrZero('abc');                                                                        |
+| toUInt32               | macro       | Converts a value to an unsigned 32-bit integer                                               |                                               | SELECT toUInt32('123');                                                                              |
+| toUInt32OrNull         | macro       | Converts to an unsigned 32-bit integer or returns NULL on failure                            |                                               | SELECT toUInt32OrNull('abc');                                                                        |
+| toUInt32OrZero         | macro       | Converts to an unsigned 32-bit integer or returns zero on failure                            |                                               | SELECT toUInt32OrZero('abc');                                                                        |
+| toUInt64               | macro       | Converts a value to an unsigned 64-bit integer                                               |                                               | SELECT toUInt64('123');                                                                              |
+| toUInt64OrNull         | macro       | Converts to an unsigned 64-bit integer or returns NULL on failure                            |                                               | SELECT toUInt64OrNull('abc');                                                                        |
+| toUInt64OrZero         | macro       | Converts to an unsigned 64-bit integer or returns zero on failure                            |                                               | SELECT toUInt64OrZero('abc');                                                                        |
+| toUInt8                | macro       | Converts a value to an unsigned 8-bit integer                                                |                                               | SELECT toUInt8('123');                                                                               |
+| toUInt8OrNull          | macro       | Converts to an unsigned 8-bit integer or returns NULL on failure                             |                                               | SELECT toUInt8OrNull('abc');                                                                         |
+| toUInt8OrZero          | macro       | Converts to an unsigned 8-bit integer or returns zero on failure                             |                                               | SELECT toUInt8OrZero('abc');                                                                         |
+| toYYYYMM               | macro       | Formats a Date to 'YYYYMM' string format                                                     |                                               | SELECT toYYYYMM('2023-09-10');                                                                       |
+| toYYYYMMDD             | macro       | Formats a Date to 'YYYYMMDD' string format                                                   |                                               | SELECT toYYYYMMDD('2023-09-10');                                                                     |
+| toYYYYMMDDhhmmss       | macro       | Formats a DateTime to 'YYYYMMDDhhmmss' string format                                         |                                               | SELECT toYYYYMMDDhhmmss(now());                                                                      |
+| toYear                 | macro       | Extracts the year from a Date or DateTime value                                              |                                               | SELECT toYear('2023-09-10');                                                                         |
+| topLevelDomain         | macro       | Extracts the top-level domain (TLD) from a URL                                               |                                               | SELECT topLevelDomain('https://example.com');                                                        |
+| tupleConcat            | macro       | Concatenates two tuples into one tuple                                                       |                                               | SELECT tupleConcat((1, 'a'), (2, 'b'));                                                              |
+| tupleDivide            | macro       | Performs element-wise division between two tuples                                            |                                               | SELECT tupleDivide((10, 20), (2, 5));                                                                |
+| tupleDivideByNumber    | macro       | Divides each element of a tuple by a number                                                  |                                               | SELECT tupleDivideByNumber((10, 20), 2);                                                             |
+| tupleIntDiv            | macro       | Performs element-wise integer division between two tuples                                    |                                               | SELECT tupleIntDiv((10, 20), (3, 4));                                                                |
+| tupleIntDivByNumber    | macro       | Performs integer division of each element of a tuple by a number                             |                                               | SELECT tupleIntDivByNumber((10, 20), 3);                                                             |
+| tupleMinus             | macro       | Performs element-wise subtraction between two tuples                                         |                                               | SELECT tupleMinus((10, 20), (5, 3));                                                                 |
+| tupleModulo            | macro       | Performs element-wise modulus between two tuples                                             |                                               | SELECT tupleModulo((10, 20), (3, 6));                                                                |
+| tupleModuloByNumber    | macro       | Calculates the modulus of each element of a tuple by a number                                |                                               | SELECT tupleModuloByNumber((10, 20), 3);                                                             |
+| tupleMultiply          | macro       | Performs element-wise multiplication between two tuples                                      |                                               | SELECT tupleMultiply((10, 20), (2, 5));                                                              |
+| tupleMultiplyByNumber  | macro       | Multiplies each element of a tuple by a number                                               |                                               | SELECT tupleMultiplyByNumber((10, 20), 3);                                                           |
+| tuplePlus              | macro       | Performs element-wise addition between two tuples                                            |                                               | SELECT tuplePlus((1, 2), (3, 4));                                                                    |
+| url                    | table_macro | Performs queries against remote URLs using the specified format                              | Supports JSON, CSV, PARQUET, TEXT, BLOB       | SELECT * FROM url('https://urleng.com/test','JSON');                                                 |
+| JSONExtract            | macro       | Extracts JSON data based on key from a JSON object                                           |                                               | SELECT JSONExtract(json_column, 'user.name');                                                        |
+| JSONExtractString      | macro       | Extracts JSON data as a VARCHAR from a JSON object                                           |                                               | SELECT JSONExtractString(json_column, 'user.email');                                                 |
+| JSONExtractUInt        | macro       | Extracts JSON data as an unsigned integer from a JSON object                                 |                                               | SELECT JSONExtractUInt(json_column, 'user.age');                                                     |
+| JSONExtractInt         | macro       | Extracts JSON data as a 32-bit integer from a JSON object                                    |                                               | SELECT JSONExtractInt(json_column, 'user.balance');                                                  |
+| JSONExtractFloat       | macro       | Extracts JSON data as a double from a JSON object                                            |                                               | SELECT JSONExtractFloat(json_column, 'user.score');                                                  |
+| JSONExtractRaw         | macro       | Extracts raw JSON data based on key from a JSON object                                       |                                               | SELECT JSONExtractRaw(json_column, 'user.address');                                                  |
+| JSONHas                | macro       | Checks if a JSON key exists and is not null                                                  |                                               | SELECT JSONHas(json_column, 'user.active');                                                          |
+| JSONLength             | macro       | Returns the length of a JSON array                                                           |                                               | SELECT JSONLength(json_column, 'items');                                                             |
+| JSONType               | macro       | Determines the type of JSON element at the given path                                        |                                               | SELECT JSONType(json_column, 'user.data');                                                           |
+| JSONExtractKeys        | macro       | Extracts keys from a JSON object                                                             |                                               | SELECT JSONExtractKeys(json_column);                                                                 |
+| JSONExtractValues      | macro       | Extracts all values as text from a JSON object                                               |                                               | SELECT JSONExtractValues(json_column);                                                               |
+| equals                 | macro       | Checks if two values are equal                                                               |                                               | SELECT equals(column_a, column_b);                                                                   |
+| notEquals              | macro       | Checks if two values are not equal                                                           |                                               | SELECT notEquals(column_a, column_b);                                                                |
+| less                   | macro       | Checks if one value is less than another                                                     |                                               | SELECT less(column_a, column_b);                                                                     |
+| greater                | macro       | Checks if one value is greater than another                                                  |                                               | SELECT greater(column_a, column_b);                                                                  |
+| lessOrEquals           | macro       | Checks if one value is less than or equal to another                                         |                                               | SELECT lessOrEquals(column_a, column_b);                                                             |
+| greaterOrEquals        | macro       | Checks if one value is greater than or equal to another                                      |                                               | SELECT greaterOrEquals(column_a, column_b);                                                          |
+| dictGet                | macro       | Retrieves an attribute from a VARIABLE string or MAP                                         |                                               | SELECT dictGet('dictionary_name', 'attribute');                                                      |
 
 ###### Disclaimer
 > DuckDB ® is a trademark of DuckDB Foundation. ClickHouse® is a trademark of ClickHouse Inc. All trademarks, service marks, and logos mentioned or depicted are the property of their respective owners. The use of any third-party trademarks, brand names, product names, and company names is purely informative or intended as parody and does not imply endorsement, affiliation, or association with the respective owners.
