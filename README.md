@@ -30,8 +30,11 @@ Once installed, the [macro functions](https://community-extensions.duckdb.org/ex
 Here's a random example out of 100s using the `IPv4StringToNum` and `IPv4NumToString` functions:
 
 ```sql
+--- Install and load chsql
 D INSTALL chsql FROM community;
 D LOAD chsql;
+
+--- Use any of the 100+ ClickHouse Macros
 D SELECT IPv4StringToNum('127.0.0.1'), IPv4NumToString(2130706433);
 ┌──────────────────────────────┬─────────────────────────────┐
 │ ipv4stringtonum('127.0.0.1') │ ipv4numtostring(2130706433) │
@@ -45,6 +48,15 @@ D SELECT IPv4StringToNum('127.0.0.1'), IPv4NumToString(2130706433);
 The built-in `ch_scan` function can be used to query remote ClickHouse servers using the HTTP/s API
 
 ```sql
+--- Set optional X-Header Authentication
+D CREATE SECRET extra_http_headers (
+      TYPE HTTP,
+      EXTRA_HTTP_HEADERS MAP{
+          'X-ClickHouse-User': 'user',
+          'X-ClickHouse-Key': 'password'
+      }
+  );
+--- Query using the HTTP API
 D SELECT * FROM ch_scan("SELECT number * 2 FROM numbers(10)", "https://play.clickhouse.com");
 ```
 
