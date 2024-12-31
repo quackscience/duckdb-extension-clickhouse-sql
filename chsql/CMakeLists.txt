@@ -22,6 +22,7 @@ add_subdirectory(
 
 # Find OpenSSL package
 find_package(OpenSSL REQUIRED)
+find_package(Zstd REQUIRED)
 
 set(EXTENSION_NAME ${TARGET_NAME}_extension)
 set(LOADABLE_EXTENSION_NAME ${TARGET_NAME}_loadable_extension)
@@ -45,12 +46,12 @@ build_static_extension(${TARGET_NAME} ${EXTENSION_SOURCES})
 build_loadable_extension(${TARGET_NAME} " " ${EXTENSION_SOURCES})
 
 # Link libraries using plain signature
-target_link_libraries(${EXTENSION_NAME} OpenSSL::SSL OpenSSL::Crypto clickhouse-cpp-lib)
-target_link_libraries(${LOADABLE_EXTENSION_NAME} OpenSSL::SSL OpenSSL::Crypto clickhouse-cpp-lib)
+target_link_libraries(${EXTENSION_NAME} OpenSSL::SSL OpenSSL::Crypto Zstd::Zstd clickhouse-cpp-lib)
+target_link_libraries(${LOADABLE_EXTENSION_NAME} OpenSSL::SSL OpenSSL::Crypto Zstd::Zstd clickhouse-cpp-lib)
 
 # Install targets
 install(
-    TARGETS ${EXTENSION_NAME} clickhouse-cpp-lib absl_int128 cityhash lz4 zstdstatic
+    TARGETS ${EXTENSION_NAME}
     EXPORT "${DUCKDB_EXPORT_SET}"
     LIBRARY DESTINATION "${INSTALL_LIB_DIR}"
     ARCHIVE DESTINATION "${INSTALL_LIB_DIR}"
