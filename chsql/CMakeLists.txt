@@ -51,20 +51,13 @@ build_static_extension(${TARGET_NAME} ${EXTENSION_SOURCES})
 build_loadable_extension(${TARGET_NAME} " " ${EXTENSION_SOURCES})
 
 # Link libraries using plain signature
-target_link_libraries(${EXTENSION_NAME} OpenSSL::SSL OpenSSL::Crypto clickhouse-cpp-lib)
-target_link_libraries(${LOADABLE_EXTENSION_NAME} OpenSSL::SSL OpenSSL::Crypto clickhouse-cpp-lib)
+target_link_libraries(${EXTENSION_NAME} OpenSSL::SSL OpenSSL::Crypto clickhouse-cpp-lib absl_int128 cityhash lz4 zstdstatic)
+target_link_libraries(${LOADABLE_EXTENSION_NAME} OpenSSL::SSL OpenSSL::Crypto clickhouse-cpp-lib absl_int128 cityhash lz4 zstdstatic)
 
 # Install targets
 install(
-    TARGETS ${EXTENSION_NAME} clickhouse-cpp-lib
+    TARGETS ${EXTENSION_NAME}
     EXPORT "${DUCKDB_EXPORT_SET}"
     LIBRARY DESTINATION "${INSTALL_LIB_DIR}"
     ARCHIVE DESTINATION "${INSTALL_LIB_DIR}"
-)
-
-# Make sure the export set includes clickhouse-cpp-lib
-export(
-    TARGETS ${EXTENSION_NAME} clickhouse-cpp-lib
-    NAMESPACE duckdb::
-    FILE DuckDBExports.cmake
 )
