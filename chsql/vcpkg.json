@@ -1,10 +1,7 @@
 {
   "dependencies": [
     "openssl",
-    {
-        "name": "abseil",
-        "version>=": "20230125.3"
-    },
+    "abseil",
     "cityhash",
     "lz4",
     "zstd"
