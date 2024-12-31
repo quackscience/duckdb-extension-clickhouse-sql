@@ -8,3 +8,6 @@
 	url = https://github.com/duckdb/extension-ci-tools
 	branch = main
 	update = merge
+[submodule "contribs/clickhouse-cpp"]
+	path = contribs/clickhouse-cpp
+	url = https://github.com/ClickHouse/clickhouse-cpp.git
