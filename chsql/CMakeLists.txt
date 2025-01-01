@@ -11,6 +11,8 @@ include(ExternalProject)
 ExternalProject_Add(clickhouse_cpp_external
         SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../contribs/clickhouse-cpp
         CMAKE_ARGS
+        -DCMAKE_OSX_ARCHITECTURES="${CMAKE_OSX_ARCHITECTURES}"
+        -DCMAKE_OSX_DEPLOYMENT_TARGET="${CMAKE_OSX_DEPLOYMENT_TARGET}"
         -DCMAKE_CXX_FLAGS=-fPIC
         INSTALL_COMMAND ""  # Skip install step
         BUILD_BYPRODUCTS
