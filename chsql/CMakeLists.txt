@@ -7,7 +7,7 @@ set(TARGET_NAME chsql)
 
 project(${TARGET_NAME})
 
-if(DUCKDB_EXPLICIT_PLATFORM MATCHER "linux_arm64")
+if(DUCKDB_EXPLICIT_PLATFORM MATCHES "linux_arm64")
     set(ARCH_FLAGS "-march=armv8-a")
 endif()
 
