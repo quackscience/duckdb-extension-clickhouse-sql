@@ -7,7 +7,7 @@ set(TARGET_NAME chsql)
 
 project(${TARGET_NAME})
 
-if(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64")
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64" OR DUCKDB_EXPLICIT_PLATFORM MATCHES "linux_arm64")
     set(ARCH_FLAGS "-march=armv8-a")
 endif()
 
