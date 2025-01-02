@@ -7,9 +7,9 @@ set(TARGET_NAME chsql)
 
 project(${TARGET_NAME})
 
-if(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64" OR DUCKDB_EXPLICIT_PLATFORM MATCHES "linux_arm64")
-    set(ARCH_FLAGS "-march=armv8-a")
-endif()
+#if(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64" OR DUCKDB_EXPLICIT_PLATFORM MATCHES "linux_arm64")
+#    set(ARCH_FLAGS "-march=armv8-a")
+#endif()
 
 include(ExternalProject)
 ExternalProject_Add(clickhouse_cpp_external
@@ -17,6 +17,8 @@ ExternalProject_Add(clickhouse_cpp_external
         CMAKE_ARGS
         -DCMAKE_OSX_ARCHITECTURES=${CMAKE_OSX_ARCHITECTURES}
         -DCMAKE_OSX_DEPLOYMENT_TARGET=${CMAKE_OSX_DEPLOYMENT_TARGET}
+        -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+        -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
         "-DCMAKE_CXX_FLAGS=-fPIC ${ARCH_FLAGS}"
         -DCMAKE_C_FLAGS=${ARCH_FLAGS}
         INSTALL_COMMAND ""  # Skip install step
