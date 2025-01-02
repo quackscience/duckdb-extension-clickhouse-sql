@@ -13,7 +13,8 @@ ExternalProject_Add(clickhouse_cpp_external
         CMAKE_ARGS
         -DCMAKE_OSX_ARCHITECTURES=${CMAKE_OSX_ARCHITECTURES}
         -DCMAKE_OSX_DEPLOYMENT_TARGET=${CMAKE_OSX_DEPLOYMENT_TARGET}
-        -DCMAKE_CXX_FLAGS=-fPIC
+        -DCMAKE_CXX_FLAGS=-fPIC ${ARCH_FLAGS}
+        -DCMAKE_C_FLAGS=${ARCH_FLAGS}
         INSTALL_COMMAND ""  # Skip install step
         BUILD_BYPRODUCTS
             ${CMAKE_CURRENT_BINARY_DIR}/clickhouse_cpp_external-prefix/src/clickhouse_cpp_external-build/clickhouse/libclickhouse-cpp-lib.a
