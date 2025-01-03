@@ -1,6 +1,7 @@
 {
   "dependencies": [
     "openssl",
+    "clickhouse-cpp",
     "abseil",
     "cityhash",
     "lz4",
