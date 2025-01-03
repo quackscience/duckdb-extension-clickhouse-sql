@@ -13,8 +13,11 @@
 // OpenSSL linked through vcpkg
 #include <openssl/opensslv.h>
 #include "parquet_ordered_scan.cpp"
-#include "clickhouse_scan.hpp"
 
+#if !defined(EMSCRIPTEN) && !defined(MINGW)
+#include "clickhouse_scan.hpp"
+#endif
+	
 namespace duckdb {
 
 // To add a new scalar SQL macro, add a new macro to this array!
@@ -230,9 +233,12 @@ static void LoadInternal(DatabaseInstance &instance) {
 	ExtensionUtil::RegisterFunction(instance, ReadParquetOrderedFunction());
     // Flock
     ExtensionUtil::RegisterFunction(instance, DuckFlockTableFunction());
-    // Clickhouse Scan
-    RegisterClickHouseScanFunction(instance);
 
+#if !defined(EMSCRIPTEN) && !defined(MINGW)
+    // Clickhouse Scan for supported platforms
+    RegisterClickHouseScanFunction(instance);
+#endif
+	
 }
 
 void ChsqlExtension::Load(DuckDB &db) {
