@@ -45,6 +45,10 @@ set(CH_CPP_WITH_OPENSSL ON CACHE BOOL "Use OpenSSL")
 # Find OpenSSL package
 find_package(OpenSSL REQUIRED)
 
+if(MINGW)
+    set(OPENSSL_USE_STATIC_LIBS TRUE)
+endif()
+
 set(EXTENSION_NAME ${TARGET_NAME}_extension)
 set(LOADABLE_EXTENSION_NAME ${TARGET_NAME}_loadable_extension)
 
