@@ -65,18 +65,17 @@ else()
 include_directories(
     ./src/include
     ./src
-    ${CMAKE_CURRENT_SOURCE_DIR}/../duckdb/extension/parquet/include
 )
 endif()
 
 set(EXTENSION_SOURCES 
     src/chsql_extension.cpp 
-    src/duck_flock.cpp
 )
 
 # Include clickhouse_scan for supported platforms
 if(NOT EMSCRIPTEN OR NOT MINGW)
-    list(APPEND EXTENSION_SOURCES src/clickhouse_scan.cpp)
+    list(APPEND EXTENSION_SOURCES src/clickhouse_scan.cpp src/duck_flock.cpp
+)
 endif()
 
 build_static_extension(${TARGET_NAME} ${EXTENSION_SOURCES})
