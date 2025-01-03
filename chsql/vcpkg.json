@@ -1,20 +1,34 @@
 {
   "dependencies": [
     "openssl",
+    "clickhouse-cpp",
+    "abseil",
+    "lz4",
+    "zstd"
+  ],
+  "overrides": [
     {
-      "name":  "clickhouse-cpp",
+      "name": "clickhouse-cpp",
+      "version": "0",
+      "port-version": 0,
       "platform": "!wasm32,!mingw,!windows"
     },
     {
-      "name":"abseil",
+      "name": "abseil",
+      "version": "0",
+      "port-version": 0,
       "platform": "!wasm32,!mingw,!windows"
     },
     {
-      "name":"lz4",
+      "name": "lz4",
+      "version": "0",
+      "port-version": 0,
       "platform": "!wasm32,!mingw,!windows"
     },
     {
-      "name":"zstd",
+      "name": "zstd",
+      "version": "0",
+      "port-version": 0,
       "platform": "!wasm32,!mingw,!windows"
     }
   ]
