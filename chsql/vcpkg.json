@@ -7,10 +7,6 @@
     },
     "abseil",
     "lz4",
-    "zstd",
-    {
-      "name": "cityhash",
-      "platform": "!(windows & x86 & static) | !windows "
-    }
+    "zstd"
   ]
 }
