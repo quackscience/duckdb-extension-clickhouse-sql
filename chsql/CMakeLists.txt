@@ -32,10 +32,10 @@ if(NOT EMSCRIPTEN OR NOT MINGW)
     add_library(clickhouse_cpp_lib STATIC IMPORTED)
     set_target_properties(clickhouse_cpp_lib PROPERTIES
             IMPORTED_LOCATION ${CMAKE_CURRENT_BINARY_DIR}/clickhouse_cpp_external-prefix/src/clickhouse_cpp_external-build/clickhouse/libclickhouse-cpp-lib.a
-            INTERFACE_LINK_LIBRARIES "${CMAKE_CURRENT_BINARY_DIR}/clickhouse_cpp_external-prefix/src/clickhouse_cpp_external-build/contrib/absl/absl/libabsl_int128.a;${CMAKE_CURRENT_BINARY_DIR}/clickhouse[...]
+            INTERFACE_LINK_LIBRARIES "${CMAKE_CURRENT_BINARY_DIR}/clickhouse_cpp_external-prefix/src/clickhouse_cpp_external-build/contrib/absl/absl/libabsl_int128.a;${CMAKE_CURRENT_BINARY_DIR}/clickhouse_cpp_external-prefix/src/clickhouse_cpp_external-build/contrib/cityhash/cityhash/libcityhash.a;${CMAKE_CURRENT_BINARY_DIR}/clickhouse_cpp_external-prefix/src/clickhouse_cpp_external-build/contrib/lz4/lz4/liblz4.a;${CMAKE_CURRENT_BINARY_DIR}/clickhouse_cpp_external-prefix/src/clickhouse_cpp_external-build/contrib/zstd/zstd/libzstdstatic.a"
     )
+    
     add_dependencies(clickhouse_cpp_lib clickhouse_cpp_external)
-
     # Configure clickhouse-cpp options
     set(CH_CPP_BUILD_SHARED OFF CACHE BOOL "Build shared library")
     set(CH_CPP_BUILD_STATICALY_LINKED_LIB ON CACHE BOOL "Build static library")
@@ -65,12 +65,12 @@ endif()
 
 include_directories(EXTENSION_INCLUDES)
 
-# Update extension sources to include new file
 set(EXTENSION_SOURCES 
     src/chsql_extension.cpp 
     src/duck_flock.cpp
 )
 
+# Include clickhouse_scan for supported platforms
 if(NOT EMSCRIPTEN OR NOT MINGW)
     list(APPEND EXTENSION_SOURCES src/clickhouse_scan.cpp)
 endif()
