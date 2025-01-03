@@ -12,9 +12,9 @@
 
 // OpenSSL linked through vcpkg
 #include <openssl/opensslv.h>
-#include "parquet_ordered_scan.cpp"
 
 #if !defined(EMSCRIPTEN) && !defined(MINGW)
+#include "parquet_ordered_scan.cpp"
 #include "clickhouse_scan.hpp"
 #endif
 	
@@ -230,13 +230,16 @@ static void LoadInternal(DatabaseInstance &instance) {
 		auto table_info = DefaultTableFunctionGenerator::CreateTableMacroInfo(chsql_table_macros[index]);
         ExtensionUtil::RegisterFunction(instance, *table_info);
 	}
+	
+#if !defined(EMSCRIPTEN)
+	// Parquet Reader
 	ExtensionUtil::RegisterFunction(instance, ReadParquetOrderedFunction());
-    // Flock
-    ExtensionUtil::RegisterFunction(instance, DuckFlockTableFunction());
-
-#if !defined(EMSCRIPTEN) && !defined(MINGW)
-    // Clickhouse Scan for supported platforms
-    RegisterClickHouseScanFunction(instance);
+        // Flock Table
+        ExtensionUtil::RegisterFunction(instance, DuckFlockTableFunction());
+#if !defined(MINGW)
+        // Clickhouse Scan for supported platforms
+        RegisterClickHouseScanFunction(instance);
+#endif
 #endif
 	
 }
