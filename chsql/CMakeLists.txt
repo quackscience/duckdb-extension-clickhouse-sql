@@ -53,17 +53,21 @@ endif()
 set(EXTENSION_NAME ${TARGET_NAME}_extension)
 set(LOADABLE_EXTENSION_NAME ${TARGET_NAME}_loadable_extension)
 
-set(EXTENSION_INCLUDES
+if(NOT EMSCRIPTEN OR NOT MINGW)
+include_directories(
+    ./src/include
+    ./src
+    ${CMAKE_CURRENT_SOURCE_DIR}/../duckdb/extension/parquet/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/../contribs/clickhouse-cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../contribs/clickhouse-cpp/contrib/absl
+)
+else()
+include_directories(
     ./src/include
     ./src
     ${CMAKE_CURRENT_SOURCE_DIR}/../duckdb/extension/parquet/include
 )
-
-if(NOT EMSCRIPTEN OR NOT MINGW)
-    list(APPEND EXTENSION_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/../contribs/clickhouse-cpp ${CMAKE_CURRENT_SOURCE_DIR}/../contribs/clickhouse-cpp/contrib/absl)
 endif()
-
-include_directories(EXTENSION_INCLUDES)
 
 set(EXTENSION_SOURCES 
     src/chsql_extension.cpp 
