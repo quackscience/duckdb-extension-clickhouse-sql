@@ -1,10 +1,16 @@
 {
   "dependencies": [
     "openssl",
-    "clickhouse-cpp",
+    {
+      "name":  "clickhouse-cpp",
+      "platform": "!wasm32"
+    },
     "abseil",
-    "cityhash",
     "lz4",
-    "zstd"
+    "zstd",
+    {
+      "name": "cityhash",
+      "platform": "!windows"
+    }
   ]
 }
