@@ -3,10 +3,19 @@
     "openssl",
     {
       "name":  "clickhouse-cpp",
-      "platform": "!wasm32"
+      "platform": "!wasm32,!mingw,!windows"
     },
-    "abseil",
-    "lz4",
-    "zstd"
+    {
+      "name":"abseil",
+      "platform": "!wasm32,!mingw,!windows"
+    },
+    {
+      "name":"lz4",
+      "platform": "!wasm32,!mingw,!windows"
+    },
+    {
+      "name":"zstd",
+      "platform": "!wasm32,!mingw,!windows"
+    }
   ]
 }
