@@ -10,7 +10,7 @@
     "zstd",
     {
       "name": "cityhash",
-      "platform": "!windows | !MinGW"
+      "platform": "!windows, !mingw"
     }
   ]
 }
