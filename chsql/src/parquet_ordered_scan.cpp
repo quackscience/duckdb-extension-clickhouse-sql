@@ -141,20 +141,8 @@ namespace duckdb {
 					case Type::BOOLEAN:
 						return_type = LogicalType::TINYINT;
 					break;
-					case Type::TIMESTAMP_NS:
+					case Type::TIMESTAMP:
 				            return_type = LogicalType::TIMESTAMP_NS; 
-				        break;
-				        case Type::TIMESTAMP_MS:
-				            return_type = LogicalType::TIMESTAMP_MS;
-				        break;
-					case Type::TIMESTAMP_S:
-				            return_type = LogicalType::TIMESTAMP_S;
-				        break;
-				        case Type::TIMESTAMPTZ:
-				            return_type = LogicalType::TIMESTAMPTZ;
-				        break;
-					 case Type::TIMESTAMP:
-				            return_type = LogicalType::TIMESTAMP;
 				        break;
 					case Type::DATE:
 				            return_type = LogicalType::DATE;
