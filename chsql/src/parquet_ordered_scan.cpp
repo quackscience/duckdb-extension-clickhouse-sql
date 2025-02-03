@@ -134,12 +134,19 @@ namespace duckdb {
 					break;
 					case Type::BYTE_ARRAY:
 						return_type = LogicalType::VARCHAR;
+					break;
 					case Type::FIXED_LEN_BYTE_ARRAY:
 						return_type = LogicalType::VARCHAR;
 					break;
 					case Type::BOOLEAN:
 						return_type = LogicalType::TINYINT;
 					break;
+					case duckdb_parquet::ConvertedType::TIMESTAMP_MILLIS:
+				                return_type = LogicalType::TIMESTAMP_MS;
+				        break;
+				        case duckdb_parquet::ConvertedType::TIMESTAMP_MICROS:
+				                return_type = LogicalType::TIMESTAMP;
+				        break;
 					default:
 						break;;
 				}
