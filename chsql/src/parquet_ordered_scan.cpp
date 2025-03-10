@@ -3,6 +3,7 @@
 #include <parquet_reader.hpp>
 #include "chsql_extension.hpp"
 #include <duckdb/common/multi_file_list.hpp>
+#include "chsql_parquet_types.h"
 
 namespace duckdb {
 
@@ -113,36 +114,15 @@ namespace duckdb {
 			po.binary_as_string = true;
 			ParquetReader reader(context, file, po, nullptr);
 			set->columnMap = vector<idx_t>();
-			for (auto &el : reader.metadata->metadata->schema) {
+			for (auto it = reader.metadata->metadata->schema.begin();
+				it!= reader.metadata->metadata->schema.end(); ++it) {
+				auto &el = *it;
 				if (el.num_children != 0) {
 					continue;
 				}
 				auto name_it = std::find(names.begin(), names.end(), el.name);
-				auto return_type = LogicalType::ANY;
-				switch (el.type) {
-					case Type::INT32:
-						return_type = LogicalType::INTEGER;
-					break;
-					case Type::INT64:
-						return_type = LogicalType::BIGINT;
-					break;
-					case Type::DOUBLE:
-						return_type = LogicalType::DOUBLE;
-					break;
-					case Type::FLOAT:
-						return_type = LogicalType::FLOAT;
-					break;
-					case Type::BYTE_ARRAY:
-						return_type = LogicalType::VARCHAR;
-					case Type::FIXED_LEN_BYTE_ARRAY:
-						return_type = LogicalType::VARCHAR;
-					break;
-					case Type::BOOLEAN:
-						return_type = LogicalType::TINYINT;
-					break;
-					default:
-						break;;
-				}
+				auto return_type = ParquetTypesManager::get_logical_type(reader.metadata->metadata->schema,
+					it - reader.metadata->metadata->schema.begin());
 				set->columnMap.push_back(name_it - names.begin());
 				if (el.name == res->orderBy) {
 					set->orderByIdx = name_it - names.begin();
