@@ -15,13 +15,14 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  duckdb-next-build:
-    name: Build extension binaries (next)
-    uses: duckdb/extension-ci-tools/.github/workflows/_extension_distribution.yml@main
-    with:
-      duckdb_version: main
-      ci_tools_version: main
-      extension_name: chsql
+#  Temporarily disabled because main is broken
+#  duckdb-next-build:
+#    name: Build extension binaries (next)
+#    uses: duckdb/extension-ci-tools/.github/workflows/_extension_distribution.yml@main
+#    with:
+#      duckdb_version: 1.1.2
+#      ci_tools_version: 1.1.2
+#      extension_name: chsql
 
   duckdb-stable-build:
     name: Build extension binaries

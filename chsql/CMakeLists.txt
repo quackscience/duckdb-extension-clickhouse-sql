@@ -7,6 +7,7 @@ set(TARGET_NAME chsql)
 find_package(OpenSSL REQUIRED)
 set(EXTENSION_NAME ${TARGET_NAME}_extension)
 set(LOADABLE_EXTENSION_NAME ${TARGET_NAME}_loadable_extension)
+set(CHSQL_DUCKDB_VERSION ${DUCKDB_MAJOR_VERSION})
 project(${TARGET_NAME})
 
 include_directories(

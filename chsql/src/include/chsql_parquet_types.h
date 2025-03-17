@@ -5,6 +5,7 @@
 #ifndef PARQUET_TYPES_H
 #define PARQUET_TYPES_H
 
+
 #include "duckdb.hpp"
 #include <parquet_types.h>
 

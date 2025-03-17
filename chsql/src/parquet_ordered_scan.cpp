@@ -37,9 +37,9 @@ namespace duckdb {
                 }
 				columnMap.push_back(schema_column - reader->metadata->metadata->schema.begin() - 1);
 				reader->reader_data.column_ids.push_back(
-					MultiFileLocalColumnId(schema_column - reader->metadata->metadata->schema.begin() - 1));
+					schema_column - reader->metadata->metadata->schema.begin() - 1);
 				reader->reader_data.column_mapping.push_back(
-					MultiFileGlobalIndex(it - returnCols.begin()));
+					it - returnCols.begin());
 			}
 			auto order_by_column_it = find_if(
 				reader->metadata->metadata->schema.begin(),
@@ -53,7 +53,7 @@ namespace duckdb {
 		}
 		void Scan(ClientContext& ctx) {
 			chunk->Reset();
-			reader->Scan(ctx, *scanState, *chunk);
+			reader->Scan(*scanState, *chunk);
 			if (!haveAbsentColumns || chunk->size() == 0) {
 				return;
 			}
