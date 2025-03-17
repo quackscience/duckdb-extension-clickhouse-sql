@@ -3,24 +3,76 @@
 #include <parquet_reader.hpp>
 #include "chsql_extension.hpp"
 #include <duckdb/common/multi_file_list.hpp>
+#include "chsql_parquet_types.h"
 
 namespace duckdb {
 
+	struct ReturnColumn {
+		string name;
+		LogicalType type;
+	};
+
 	struct ReaderSet {
 		unique_ptr<ParquetReader> reader;
-		idx_t orderByIdx;
+		vector<ReturnColumn> returnColumns;
+		int64_t orderByIdx;
 		unique_ptr<DataChunk> chunk;
 		unique_ptr<ParquetReaderScanState> scanState;
-		vector<idx_t> columnMap;
+		vector<int64_t> columnMap;
 		idx_t result_idx;
+		bool haveAbsentColumns;
+		void populateColumnInfo(const vector<ReturnColumn>& returnCols, const string& order_by_column) {
+			this->returnColumns = returnCols;
+			columnMap.clear();
+			haveAbsentColumns = false;
+			for (auto it = returnCols.begin(); it!= returnCols.end(); ++it) {
+				auto schema_column = find_if(
+					reader->metadata->metadata->schema.begin(),
+					reader->metadata->metadata->schema.end(),
+					[&](const SchemaElement& column) { return column.name == it->name; });
+				if (schema_column == reader->metadata->metadata->schema.end()) {
+                    columnMap.push_back(-1);
+					haveAbsentColumns = true;
+					continue;
+                }
+				columnMap.push_back(schema_column - reader->metadata->metadata->schema.begin() - 1);
+				reader->reader_data.column_ids.push_back(
+					schema_column - reader->metadata->metadata->schema.begin() - 1);
+				reader->reader_data.column_mapping.push_back(
+					it - returnCols.begin());
+			}
+			auto order_by_column_it = find_if(
+				reader->metadata->metadata->schema.begin(),
+                reader->metadata->metadata->schema.end(),
+                [&](const SchemaElement& column) { return column.name == order_by_column; });
+            if (order_by_column_it == reader->metadata->metadata->schema.end()) {
+	            orderByIdx = -1;
+            } else {
+                orderByIdx = order_by_column_it - reader->metadata->metadata->schema.begin() - 1;
+            }
+		}
+		void Scan(ClientContext& ctx) {
+			chunk->Reset();
+			reader->Scan(*scanState, *chunk);
+			if (!haveAbsentColumns || chunk->size() == 0) {
+				return;
+			}
+			for (auto it = columnMap.begin(); it!=columnMap.end(); ++it) {
+				if (*it != -1) {
+					continue;
+				}
+				chunk->data[it - columnMap.begin()].Initialize(false, chunk->size());
+				for (idx_t j = 0; j < chunk->size(); j++) {
+					chunk->data[it - columnMap.begin()].SetValue(j, Value());
+				}
+			}
+		}
 	};
 
 	struct OrderedReadFunctionData : FunctionData {
 		string orderBy;
-		vector<unique_ptr<ReaderSet>> sets;
 		vector<string> files;
-		vector<LogicalType> returnTypes;
-		vector<string> names;
+		vector<ReturnColumn> returnCols;
 		unique_ptr<FunctionData> Copy() const override {
 			throw std::runtime_error("not implemented");
 		}
@@ -44,9 +96,15 @@ namespace duckdb {
 		};
 	};
 
+	bool lt(const Value &left, const Value &right) {
+		return left.IsNull() || (!right.IsNull() && left < right);
+	}
 
+	bool le(const Value &left, const Value &right) {
+		return left.IsNull() || (!right.IsNull() && left <= right);
+	}
 
-	struct  OrderedReadLocalState: LocalTableFunctionState {
+	struct OrderedReadLocalState: LocalTableFunctionState {
 		vector<unique_ptr<ReaderSet>> sets;
 		vector<idx_t> winner_group;
 		void RecalculateWinnerGroup() {
@@ -55,11 +113,17 @@ namespace duckdb {
 				return;
 			}
 			idx_t winner_idx = 0;
+			auto first_unordered = std::find_if(sets.begin(), sets.end(),
+				[&](const unique_ptr<ReaderSet> &s) { return s->orderByIdx == -1; });
+			if (first_unordered != sets.end()) {
+				winner_group.push_back(first_unordered - sets.begin());
+				return;
+			}
 			for (idx_t i = 1; i < sets.size(); i++) {
 				const auto &s = sets[i];
 				const auto &w = sets[winner_idx];
-				if (s->chunk->GetValue(s->orderByIdx, s->result_idx) <
-					w->chunk->GetValue(w->orderByIdx, w->result_idx)) {
+				if (lt(s->chunk->GetValue(s->orderByIdx, s->result_idx),
+					w->chunk->GetValue(w->orderByIdx, w->result_idx))) {
 					winner_idx = i;
 					}
 			}
@@ -70,7 +134,7 @@ namespace duckdb {
 				if (i == winner_idx)  continue;
 				auto &s = sets[i];
 				const auto &sFirst = s->chunk->GetValue(s->orderByIdx, s->result_idx);
-				if (sFirst <= wLast) {
+				if (le(sFirst, wLast)) {
 					winner_group.push_back(i);
 				}
 			}
@@ -83,6 +147,40 @@ namespace duckdb {
 		}
 	};
 
+	static vector<ReturnColumn> GetColumnsFromParquetSchemas(const vector<unique_ptr<ReaderSet>>& sets) {
+		vector<ReturnColumn> result;
+        for (auto &set : sets) {
+            const auto &schema = set->reader->metadata->metadata->schema;
+            for (auto it = schema.begin(); it != schema.end(); ++it) {
+            	if (it->num_children > 0) {
+            		continue;
+            	}
+            	auto type = ParquetTypesManager::get_logical_type(schema, it - schema.begin());
+            	auto existing_col = std::find_if(result.begin(), result.end(),
+            		[it](const ReturnColumn &c) { return c.name == it->name; });
+            	if (existing_col == result.end()) {
+            		result.push_back(ReturnColumn{it->name, type});
+            		continue;
+            	}
+            	if (existing_col->type != type) {
+            		throw std::runtime_error("the files have incompatible schema");
+            	}
+            }
+        }
+        return result;
+	}
+
+
+	static void OpenParquetFiles(ClientContext &context, const vector<string>& fileNames,
+		vector<unique_ptr<ReaderSet>>& res) {
+		for (auto & file : fileNames) {
+			auto set = make_uniq<ReaderSet>();
+			ParquetOptions po;
+			po.binary_as_string = true;
+			set->reader = make_uniq<ParquetReader>(context, file, po, nullptr);
+			res.push_back(move(set));
+		}
+	}
 
 	static unique_ptr<FunctionData> OrderedParquetScanBind(ClientContext &context, TableFunctionBindInput &input,
 														vector<LogicalType> &return_types, vector<string> &names) {
@@ -97,69 +195,23 @@ namespace duckdb {
 		string filename;
 		MultiFileListScanData it;
 		fileList.InitializeScan(it);
-		vector<string> unglobbedFileList;
 		while (fileList.Scan(it, filename)) {
-			unglobbedFileList.push_back(filename);
+			res->files.push_back(filename);
 		}
-		if (unglobbedFileList.empty()) {
-		    throw duckdb::InvalidInputException("No files matched the provided pattern.");
+		if (res->files.empty()) {
+		    throw InvalidInputException("No files matched the provided pattern.");
 		}
 
+		vector<unique_ptr<ReaderSet>> sets;
+		OpenParquetFiles(context, res->files, sets);
+
+		res->returnCols = GetColumnsFromParquetSchemas(sets);
+		std::transform(res->returnCols.begin(), res->returnCols.end(), std::back_inserter(names),
+			[](const ReturnColumn &c) { return c.name; });
+		std::transform(res->returnCols.begin(), res->returnCols.end(), std::back_inserter(return_types),
+			[](const ReturnColumn &c) { return c.type; });
+
 		res->orderBy = input.inputs[1].GetValue<string>();
-		for (auto & file : unglobbedFileList) {
-			auto set = make_uniq<ReaderSet>();
-			res->files.push_back(file);
-			ParquetOptions po;
-			po.binary_as_string = true;
-			ParquetReader reader(context, file, po, nullptr);
-			set->columnMap = vector<idx_t>();
-			for (auto &el : reader.metadata->metadata->schema) {
-				if (el.num_children != 0) {
-					continue;
-				}
-				auto name_it = std::find(names.begin(), names.end(), el.name);
-				auto return_type = LogicalType::ANY;
-				switch (el.type) {
-					case Type::INT32:
-						return_type = LogicalType::INTEGER;
-					break;
-					case Type::INT64:
-						return_type = LogicalType::BIGINT;
-					break;
-					case Type::DOUBLE:
-						return_type = LogicalType::DOUBLE;
-					break;
-					case Type::FLOAT:
-						return_type = LogicalType::FLOAT;
-					break;
-					case Type::BYTE_ARRAY:
-						return_type = LogicalType::VARCHAR;
-					case Type::FIXED_LEN_BYTE_ARRAY:
-						return_type = LogicalType::VARCHAR;
-					break;
-					case Type::BOOLEAN:
-						return_type = LogicalType::TINYINT;
-					break;
-					default:
-						break;;
-				}
-				set->columnMap.push_back(name_it - names.begin());
-				if (el.name == res->orderBy) {
-					set->orderByIdx = name_it - names.begin();
-				}
-				if (name_it != names.end()) {
-					if (return_types[name_it - names.begin()] != return_type) {
-						throw std::runtime_error("incompatible schema");
-					}
-					continue;
-				}
-				return_types.push_back(return_type);
-				names.push_back(el.name);
-			}
-			res->sets.push_back(std::move(set));
-		}
-		res->returnTypes = return_types;
-		res->names = names;
 		return std::move(res);
 	}
 
@@ -167,38 +219,23 @@ namespace duckdb {
 	ParquetScanInitLocal(ExecutionContext &context, TableFunctionInitInput &input, GlobalTableFunctionState *gstate_p) {
 		auto res = make_uniq<OrderedReadLocalState>();
 		const auto &bindData = input.bind_data->Cast<OrderedReadFunctionData>();
-		ParquetOptions po;
-		po.binary_as_string = true;
-		for (int i = 0; i < bindData.files.size(); i++) {
-			auto set = make_uniq<ReaderSet>();
-			set->reader = make_uniq<ParquetReader>(context.client, bindData.files[i], po, nullptr);
+		OpenParquetFiles(context.client, bindData.files, res->sets);
+
+		for (auto &set : res->sets) {
+			set->populateColumnInfo(bindData.returnCols, bindData.orderBy);
 			set->scanState = make_uniq<ParquetReaderScanState>();
-			int j = 0;
-			for (auto &el : set->reader->metadata->metadata->schema) {
-				if (el.num_children != 0) {
-					continue;
-				}
-				set->reader->reader_data.column_ids.push_back(j);
-				j++;
-			}
-			set->columnMap = bindData.sets[i]->columnMap;
-			set->reader->reader_data.column_mapping = set->columnMap;
 			vector<idx_t> rgs(set->reader->metadata->metadata->row_groups.size(), 0);
 			for (idx_t i = 0; i < rgs.size(); i++) {
 				rgs[i] = i;
 			}
 			set->reader->InitializeScan(context.client, *set->scanState, rgs);
 			set->chunk = make_uniq<DataChunk>();
-
-			set->orderByIdx = bindData.sets[i]->orderByIdx;
 			set->result_idx = 0;
 			auto ltypes = vector<LogicalType>();
-			for (const auto idx : set->columnMap) {
-				ltypes.push_back(bindData.returnTypes[idx]);
-			}
+			std::transform(bindData.returnCols.begin(), bindData.returnCols.end(), std::back_inserter(ltypes),
+				[](const ReturnColumn &c) { return c.type; });
 			set->chunk->Initialize(context.client, ltypes);
-			set->reader->Scan(*set->scanState, *set->chunk);
-			res->sets.push_back(std::move(set));
+			set->Scan(context.client);
 		}
 		res->RecalculateWinnerGroup();
 		return std::move(res);
@@ -207,16 +244,13 @@ namespace duckdb {
 	static void ParquetOrderedScanImplementation(
 		ClientContext &context, duckdb::TableFunctionInput &data_p,DataChunk &output) {
 		auto &loc_state = data_p.local_state->Cast<OrderedReadLocalState>();
-		const auto &fieldNames = data_p.bind_data->Cast<OrderedReadFunctionData>().names;
-		const auto &returnTypes = data_p.bind_data->Cast<OrderedReadFunctionData>().returnTypes;
+		const auto &cols = data_p.bind_data->Cast<OrderedReadFunctionData>().returnCols;
 		bool toRecalc = false;
 		for (int i = loc_state.sets.size() - 1; i >= 0 ; i--) {
 			if (loc_state.sets[i]->result_idx >= loc_state.sets[i]->chunk->size()) {
 				auto &set = loc_state.sets[i];
 				set->chunk->Reset();
-				loc_state.sets[i]->reader->Scan(
-					*loc_state.sets[i]->scanState,
-					*loc_state.sets[i]->chunk);
+				loc_state.sets[i]->Scan(context);
 				loc_state.sets[i]->result_idx = 0;
 
 				if (loc_state.sets[i]->chunk->size() == 0) {
@@ -247,18 +281,17 @@ namespace duckdb {
 			auto winnerSet = &loc_state.sets[loc_state.winner_group[0]];
 			Value winner_val = (*winnerSet)->chunk->GetValue(
 									(*winnerSet)->orderByIdx,
-									(*winnerSet)->result_idx
-									);
+									(*winnerSet)->result_idx);
 			for (int k = 1; k < loc_state.winner_group.size(); k++) {
 				const auto i = loc_state.winner_group[k];
 				const auto &set = loc_state.sets[i];
 				const Value &val = set->chunk->GetValue(set->orderByIdx, set->result_idx);
-				if (val < winner_val) {
+				if (lt(val, winner_val)) {
 					winnerSet = &loc_state.sets[i];
 					winner_val = (*winnerSet)->chunk->GetValue(set->orderByIdx, set->result_idx);
 				}
 			}
-			for (int i = 0; i < fieldNames.size(); i++) {
+			for (int i = 0; i < cols.size(); i++) {
 				const auto &val = (*winnerSet)->chunk->GetValue(i,(*winnerSet)->result_idx);
 				output.SetValue(i, j, val);
 			}

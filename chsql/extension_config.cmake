@@ -1,5 +1,5 @@
 # This file is included by DuckDB's build system. It specifies which extension to load
-
+set(CHSQL_DUCKDB_VERSION ${DUCKDB_MAJOR_VERSION})
 include_directories(
         ./src/include
         ${CMAKE_CURRENT_SOURCE_DIR}/../duckdb/extension/parquet/include

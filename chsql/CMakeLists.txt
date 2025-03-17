@@ -7,6 +7,7 @@ set(TARGET_NAME chsql)
 find_package(OpenSSL REQUIRED)
 set(EXTENSION_NAME ${TARGET_NAME}_extension)
 set(LOADABLE_EXTENSION_NAME ${TARGET_NAME}_loadable_extension)
+set(CHSQL_DUCKDB_VERSION ${DUCKDB_MAJOR_VERSION})
 project(${TARGET_NAME})
 
 include_directories(
@@ -21,7 +22,7 @@ include_directories(
         ../duckdb/third_party/mbedtls
         ../duckdb/third_party/mbedtls/include
         ../duckdb/third_party/brotli/include)
-set(EXTENSION_SOURCES src/chsql_extension.cpp src/duck_flock.cpp src/chsql_system.cpp)
+set(EXTENSION_SOURCES src/chsql_extension.cpp src/duck_flock.cpp src/chsql_system.cpp src/parquet_types.cpp)
 build_static_extension(${TARGET_NAME} ${EXTENSION_SOURCES})
 build_loadable_extension(${TARGET_NAME} " " ${EXTENSION_SOURCES})
 # Link OpenSSL in both the static library as the loadable extension
