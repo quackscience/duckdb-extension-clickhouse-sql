@@ -36,8 +36,10 @@ namespace duckdb {
 					continue;
                 }
 				columnMap.push_back(schema_column - reader->metadata->metadata->schema.begin() - 1);
-				reader->reader_data.column_ids.push_back(schema_column - reader->metadata->metadata->schema.begin() - 1);
-				reader->reader_data.column_mapping.push_back(it - returnCols.begin());
+				reader->reader_data.column_ids.push_back(
+					MultiFileLocalColumnId(schema_column - reader->metadata->metadata->schema.begin() - 1));
+				reader->reader_data.column_mapping.push_back(
+					MultiFileGlobalIndex(it - returnCols.begin()));
 			}
 			auto order_by_column_it = find_if(
 				reader->metadata->metadata->schema.begin(),
@@ -49,9 +51,9 @@ namespace duckdb {
                 orderByIdx = order_by_column_it - reader->metadata->metadata->schema.begin() - 1;
             }
 		}
-		void Scan() {
+		void Scan(ClientContext& ctx) {
 			chunk->Reset();
-			reader->Scan(*scanState, *chunk);
+			reader->Scan(ctx, *scanState, *chunk);
 			if (!haveAbsentColumns || chunk->size() == 0) {
 				return;
 			}
@@ -233,7 +235,7 @@ namespace duckdb {
 			std::transform(bindData.returnCols.begin(), bindData.returnCols.end(), std::back_inserter(ltypes),
 				[](const ReturnColumn &c) { return c.type; });
 			set->chunk->Initialize(context.client, ltypes);
-			set->Scan();
+			set->Scan(context.client);
 		}
 		res->RecalculateWinnerGroup();
 		return std::move(res);
@@ -248,7 +250,7 @@ namespace duckdb {
 			if (loc_state.sets[i]->result_idx >= loc_state.sets[i]->chunk->size()) {
 				auto &set = loc_state.sets[i];
 				set->chunk->Reset();
-				loc_state.sets[i]->Scan();
+				loc_state.sets[i]->Scan(context);
 				loc_state.sets[i]->result_idx = 0;
 
 				if (loc_state.sets[i]->chunk->size() == 0) {
