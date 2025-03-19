@@ -45,5 +45,11 @@ jobs:
 
       - name: List downloaded artifacts
         run: |
-          ls -la downloaded-artifacts/
-          find downloaded-artifacts -type f | sort
+          mkdir to-upload; \
+          for l in `ls downloaded-artifacts`; do \
+            VER=`echo $l | cut -d '-' -f 2`; \
+            ARCH=`echo $l| cut -d '-' -f 4`; \
+            EXT=`ls downloaded-artifacts/$l | cut -b 7-`; \
+            mv downloaded-artifacts/$l/chsql.$EXT to-upload/chsql.$VER.$ARCH.$EXT; \
+          done; \
+          ls -la to-upload
