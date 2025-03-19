@@ -23,6 +23,14 @@ jobs:
 #      duckdb_version: 1.1.2
 #      ci_tools_version: 1.1.2
 #      extension_name: chsql
+  # We have to build v1.2.0 based due to go-duckdb restrictions
+  duckdb-1-2-0-build:
+    name: Build extension binaries
+    uses: duckdb/extension-ci-tools/.github/workflows/_extension_distribution.yml@v1.2.1
+    with:
+      duckdb_version: v1.2.0
+      ci_tools_version: v1.2.0
+      extension_name: chsql
 
   duckdb-stable-build:
     name: Build extension binaries
@@ -31,9 +39,11 @@ jobs:
       duckdb_version: v1.2.1
       ci_tools_version: v1.2.1
       extension_name: chsql
-  process-artifacts:
+
+  process-all-artifacts:
     name: Process Extension Artifacts
-    needs: duckdb-stable-build
+    needs: [duckdb-1-2-0-build, duckdb-stable-build]
+    #if: github.event_name == 'release' && github.event.action == 'published'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -46,6 +56,7 @@ jobs:
       - name: List downloaded artifacts
         run: |
           mkdir to-upload; \
+          ls -la downloaded-artifacts; \
           for l in `ls downloaded-artifacts`; do \
             VER=`echo $l | cut -d '-' -f 2`; \
             ARCH=`echo $l| cut -d '-' -f 4`; \
@@ -53,3 +64,8 @@ jobs:
             mv downloaded-artifacts/$l/chsql.$EXT to-upload/chsql.$VER.$ARCH.$EXT; \
           done; \
           ls -la to-upload
+
+      #- name: Upload Release Assets
+      #  uses: softprops/action-gh-release@v1
+      #  with:
+      #    files: to-upload/*
