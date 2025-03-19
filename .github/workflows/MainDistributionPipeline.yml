@@ -31,4 +31,19 @@ jobs:
       duckdb_version: v1.2.1
       ci_tools_version: v1.2.1
       extension_name: chsql
-  
+  process-artifacts:
+    name: Process Extension Artifacts
+    needs: duckdb-stable-build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: downloaded-artifacts
+
+      - name: List downloaded artifacts
+        run: |
+          ls -la downloaded-artifacts/
+          find downloaded-artifacts -type f | sort
