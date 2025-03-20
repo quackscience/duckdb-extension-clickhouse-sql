@@ -9,6 +9,8 @@ on:
       - "*/**.yml"
   pull_request:
   workflow_dispatch:
+  release:
+    types: [published]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}-${{ github.head_ref || '' }}-${{ github.base_ref || '' }}-${{ github.ref != 'refs/heads/main' || github.sha }}
@@ -23,6 +25,14 @@ jobs:
 #      duckdb_version: 1.1.2
 #      ci_tools_version: 1.1.2
 #      extension_name: chsql
+  # We have to build v1.2.0 based due to go-duckdb restrictions
+  duckdb-1-2-0-build:
+    name: Build extension binaries
+    uses: duckdb/extension-ci-tools/.github/workflows/_extension_distribution.yml@v1.2.1
+    with:
+      duckdb_version: v1.2.0
+      ci_tools_version: v1.2.0
+      extension_name: chsql
 
   duckdb-stable-build:
     name: Build extension binaries
@@ -31,4 +41,35 @@ jobs:
       duckdb_version: v1.2.1
       ci_tools_version: v1.2.1
       extension_name: chsql
-  
+
+  release-all-artifacts:
+    name: Process Extension Artifacts
+    needs: [duckdb-1-2-0-build, duckdb-stable-build]
+    if: github.event_name == 'release' && github.event.action == 'published'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: downloaded-artifacts
+
+      - name: List downloaded artifacts
+        run: |
+          mkdir to-upload; \
+          echo "Artifacts downloaded:" \
+          ls -la downloaded-artifacts; \
+          for l in `ls downloaded-artifacts`; do \
+            VER=`echo $l | cut -d '-' -f 2`; \
+            ARCH=`echo $l| cut -d '-' -f 4`; \
+            EXT=`ls downloaded-artifacts/$l | cut -b 7-`; \
+            mv downloaded-artifacts/$l/chsql.$EXT to-upload/chsql.$VER.$ARCH.$EXT; \
+          done; \
+          echo "Artifacts to be uploaded:" \
+          ls -la to-upload
+
+      - name: Upload Release Assets
+        uses: softprops/action-gh-release@v1
+        with:
+          files: to-upload/*
