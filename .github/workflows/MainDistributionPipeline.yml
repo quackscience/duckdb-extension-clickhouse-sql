@@ -9,6 +9,8 @@ on:
       - "*/**.yml"
   pull_request:
   workflow_dispatch:
+  release:
+    types: [published]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}-${{ github.head_ref || '' }}-${{ github.base_ref || '' }}-${{ github.ref != 'refs/heads/main' || github.sha }}
@@ -40,10 +42,10 @@ jobs:
       ci_tools_version: v1.2.1
       extension_name: chsql
 
-  process-all-artifacts:
+  release-all-artifacts:
     name: Process Extension Artifacts
     needs: [duckdb-1-2-0-build, duckdb-stable-build]
-    #if: github.event_name == 'release' && github.event.action == 'published'
+    if: github.event_name == 'release' && github.event.action == 'published'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -56,6 +58,7 @@ jobs:
       - name: List downloaded artifacts
         run: |
           mkdir to-upload; \
+          echo "Artifacts downloaded:" \
           ls -la downloaded-artifacts; \
           for l in `ls downloaded-artifacts`; do \
             VER=`echo $l | cut -d '-' -f 2`; \
@@ -63,9 +66,10 @@ jobs:
             EXT=`ls downloaded-artifacts/$l | cut -b 7-`; \
             mv downloaded-artifacts/$l/chsql.$EXT to-upload/chsql.$VER.$ARCH.$EXT; \
           done; \
+          echo "Artifacts to be uploaded:" \
           ls -la to-upload
 
-      #- name: Upload Release Assets
-      #  uses: softprops/action-gh-release@v1
-      #  with:
-      #    files: to-upload/*
+      - name: Upload Release Assets
+        uses: softprops/action-gh-release@v1
+        with:
+          files: to-upload/*
