@@ -48,7 +48,9 @@ namespace duckdb {
             if (order_by_column_it == reader->metadata->metadata->schema.end()) {
 	            orderByIdx = -1;
             } else {
-                orderByIdx = order_by_column_it - reader->metadata->metadata->schema.begin() - 1;
+                orderByIdx = find_if(columnMap.begin(), columnMap.end(),
+                	[&](const int64_t& i) { return i == (order_by_column_it - reader->metadata->metadata->schema.begin() - 1); }) -
+            	 columnMap.begin();
             }
 		}
 		void Scan(ClientContext& ctx) {
