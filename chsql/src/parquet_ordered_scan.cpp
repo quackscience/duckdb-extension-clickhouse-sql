@@ -2,7 +2,7 @@
 #include "duckdb/common/exception.hpp"
 #include <parquet_reader.hpp>
 #include "chsql_extension.hpp"
-#include <duckdb/common/multi_file_list.hpp>
+#include <duckdb/common/multi_file/multi_file_list.hpp>
 #include "chsql_parquet_types.h"
 
 namespace duckdb {
@@ -35,11 +35,10 @@ namespace duckdb {
 					haveAbsentColumns = true;
 					continue;
                 }
-				columnMap.push_back(schema_column - reader->metadata->metadata->schema.begin() - 1);
-				reader->reader_data.column_ids.push_back(
-					schema_column - reader->metadata->metadata->schema.begin() - 1);
-				reader->reader_data.column_mapping.push_back(
-					it - returnCols.begin());
+				columnMap.push_back(static_cast<column_t>(schema_column - reader->metadata->metadata->schema.begin() - 1));
+				reader->column_ids.push_back(
+					MultiFileLocalColumnId(static_cast<column_t>(schema_column - reader->metadata->metadata->schema.begin() - 1)));
+				reader->column_indexes.emplace_back(static_cast<idx_t>(it - returnCols.begin()));
 			}
 			auto order_by_column_it = find_if(
 				reader->metadata->metadata->schema.begin(),
@@ -55,7 +54,7 @@ namespace duckdb {
 		}
 		void Scan(ClientContext& ctx) {
 			chunk->Reset();
-			reader->Scan(*scanState, *chunk);
+			reader->Scan(ctx, *scanState, *chunk);
 			if (!haveAbsentColumns || chunk->size() == 0) {
 				return;
 			}
@@ -180,7 +179,7 @@ namespace duckdb {
 			ParquetOptions po;
 			po.binary_as_string = true;
 			set->reader = make_uniq<ParquetReader>(context, file, po, nullptr);
-			res.push_back(move(set));
+			res.push_back(std::move(set));
 		}
 	}
 
@@ -189,16 +188,16 @@ namespace duckdb {
 		Connection conn(*context.db);
 		auto res = make_uniq<OrderedReadFunctionData>();
 		auto files = ListValue::GetChildren(input.inputs[0]);
-		vector<string> fileNames;
+		vector<OpenFileInfo> fileInfoList;
 		for (auto & file : files) {
-			fileNames.push_back(file.ToString());
+			fileInfoList.emplace_back(file.ToString());
 		}
-		GlobMultiFileList fileList(context, fileNames, FileGlobOptions::ALLOW_EMPTY);
-		string filename;
+		GlobMultiFileList fileList(context, fileInfoList, FileGlobOptions::ALLOW_EMPTY);
+		OpenFileInfo file_info;
 		MultiFileListScanData it;
 		fileList.InitializeScan(it);
-		while (fileList.Scan(it, filename)) {
-			res->files.push_back(filename);
+		while (fileList.Scan(it, file_info)) {
+			res->files.push_back(file_info.path);
 		}
 		if (res->files.empty()) {
 		    throw InvalidInputException("No files matched the provided pattern.");
