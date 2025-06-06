@@ -10,6 +10,11 @@ set(LOADABLE_EXTENSION_NAME ${TARGET_NAME}_loadable_extension)
 set(CHSQL_DUCKDB_VERSION ${DUCKDB_MAJOR_VERSION})
 project(${TARGET_NAME})
 
+set_source_files_properties(
+    ${CMAKE_SOURCE_DIR}/third_party/mbedtls/version
+    PROPERTIES HEADER_FILE_ONLY FALSE
+)
+
 include_directories(
         ./src/include
         ./src
