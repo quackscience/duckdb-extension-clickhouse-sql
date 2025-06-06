@@ -19,9 +19,6 @@ include_directories(
         ../duckdb/third_party/thrift
         ../duckdb/third_party/snappy
         ../duckdb/third_party/zstd/include
-if(!APPLE)
-        ../duckdb/third_party/mbedtls
-endif()
         ../duckdb/third_party/mbedtls/include
         ../duckdb/third_party/brotli/include)
 set(EXTENSION_SOURCES src/chsql_extension.cpp src/duck_flock.cpp src/chsql_system.cpp src/parquet_types.cpp)
