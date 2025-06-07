@@ -104,7 +104,7 @@ namespace duckdb {
             
             try {
                 if (res->TryFetch(data_chunk, error_data)) {
-                    if (data_chunk && !data_chunk->size() == 0) {
+                    if (data_chunk && data_chunk->size() != 0) {
                         output.Append(*data_chunk);
                         return;
                     }
