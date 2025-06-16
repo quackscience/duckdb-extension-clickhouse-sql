@@ -58,6 +58,8 @@ D CREATE SECRET extra_http_headers (
   );
 --- Query using the HTTP API
 D SELECT * FROM ch_scan("SELECT number * 2 FROM numbers(10)", "https://play.clickhouse.com");
+--- Or on your local
+SELECT * FROM ch_scan("SELECT number * 2 FROM numbers(10)", "http://localhost:8123", user:='default', format:='parquet');
 ```
 
 ## Supported Functions
